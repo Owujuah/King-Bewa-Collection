@@ -11,17 +11,29 @@ import ProductDetail from '@/components/ProductDetail';
 import AdminPage from '@/components/AdminPage';
 import { useCart } from '@/hooks/useCart';
 import { useProducts } from '@/hooks/useProducts';
-import { CheckCircle2, Settings } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import type { Product } from '@/types';
 
 type View = 'store' | 'checkout' | 'admin';
 
+function getInitialView(): View {
+  return window.location.hash === '#admin' ? 'admin' : 'store';
+}
+
 export default function App() {
   const cart = useCart();
   const { products, loading } = useProducts();
-  const [view, setView] = useState<View>('store');
+  const [view, setView] = useState<View>(getInitialView);
   const [checkoutDone, setCheckoutDone] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  useEffect(() => {
+    const onHashChange = () => {
+      setView(window.location.hash === '#admin' ? 'admin' : 'store');
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -32,7 +44,10 @@ export default function App() {
     setView('checkout');
   };
 
-  const goBack = () => setView('store');
+  const goBack = () => {
+    window.location.hash = '';
+    setView('store');
+  };
 
   const handlePlaceOrder = () => {
     cart.clearCart();
@@ -43,20 +58,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar
-        cartCount={cart.totalItems}
-        onCartClick={() => cart.setIsOpen(true)}
-      />
-
-      {/* Admin button - floating */}
-      {view === 'store' && (
-        <button
-          onClick={() => setView('admin')}
-          className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-neutral-950 text-white flex items-center justify-center shadow-lg hover:bg-neutral-800 transition-colors hover:scale-105 active:scale-95"
-          aria-label="Admin panel"
-        >
-          <Settings size={20} />
-        </button>
+      {view !== 'admin' && (
+        <Navbar
+          cartCount={cart.totalItems}
+          onCartClick={() => cart.setIsOpen(true)}
+        />
       )}
 
       {view === 'store' ? (
