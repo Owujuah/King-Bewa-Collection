@@ -8,14 +8,18 @@ import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 import CheckoutPage from '@/components/CheckoutPage';
 import ProductDetail from '@/components/ProductDetail';
+import AdminPage from '@/components/AdminPage';
 import { useCart } from '@/hooks/useCart';
-import { products } from '@/data/products';
-import { CheckCircle2 } from 'lucide-react';
+import { useProducts } from '@/hooks/useProducts';
+import { CheckCircle2, Settings } from 'lucide-react';
 import type { Product } from '@/types';
+
+type View = 'store' | 'checkout' | 'admin';
 
 export default function App() {
   const cart = useCart();
-  const [view, setView] = useState<'store' | 'checkout'>('store');
+  const { products, loading } = useProducts();
+  const [view, setView] = useState<View>('store');
   const [checkoutDone, setCheckoutDone] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
@@ -44,25 +48,44 @@ export default function App() {
         onCartClick={() => cart.setIsOpen(true)}
       />
 
+      {/* Admin button - floating */}
+      {view === 'store' && (
+        <button
+          onClick={() => setView('admin')}
+          className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-neutral-950 text-white flex items-center justify-center shadow-lg hover:bg-neutral-800 transition-colors hover:scale-105 active:scale-95"
+          aria-label="Admin panel"
+        >
+          <Settings size={20} />
+        </button>
+      )}
+
       {view === 'store' ? (
         <>
           <Hero />
-          <ProductGrid
-            products={products}
-            onAddToCart={cart.addToCart}
-            onProductClick={setSelectedProduct}
-          />
+          {loading ? (
+            <div className="py-20 flex items-center justify-center">
+              <div className="w-8 h-8 border-2 border-neutral-200 border-t-neutral-950 rounded-full animate-spin" />
+            </div>
+          ) : (
+            <ProductGrid
+              products={products}
+              onAddToCart={cart.addToCart}
+              onProductClick={setSelectedProduct}
+            />
+          )}
           <Collections />
           <About />
           <Footer />
         </>
-      ) : (
+      ) : view === 'checkout' ? (
         <CheckoutPage
           items={cart.items}
           totalPrice={cart.totalPrice}
           onBack={goBack}
           onPlaceOrder={handlePlaceOrder}
         />
+      ) : (
+        <AdminPage onBack={goBack} />
       )}
 
       <CartDrawer
